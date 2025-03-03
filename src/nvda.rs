@@ -1,4 +1,4 @@
-#[link(name = "nvdaControllerClient64")]
+#[link(name = "nvdaControllerClient")]
 #[allow(dead_code)]
 extern "stdcall" {
     fn nvdaController_speakText(message: *const u16) -> libc::c_int;
