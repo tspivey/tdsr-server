@@ -1,5 +1,5 @@
 #[link(name = "nvdaControllerClient")]
-extern "stdcall" {
+unsafe extern "stdcall" {
     fn nvdaController_speakText(message: *const u16) -> libc::c_int;
     fn nvdaController_cancelSpeech();
 }
