@@ -7,3 +7,10 @@ edition = "2021"
 
 [dependencies]
 libc = "0.2.152"
+
+[profile.release]
+strip = true
+opt-level = "z"
+lto = true
+panic = "abort"
+codegen-units = 1
