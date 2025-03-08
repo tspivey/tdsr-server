@@ -1,9 +1,12 @@
-use std::net::{TcpListener, TcpStream};
-use std::process;
 mod nvda;
 use crate::nvda::*;
-use std::io::{BufRead, BufReader};
-use std::thread;
+use std::{
+    error::Error,
+    io::{BufRead, BufReader},
+    net::{TcpListener, TcpStream},
+    process, thread,
+};
+use textwrap::wrap;
 
 fn main() {
     let listener = TcpListener::bind("0.0.0.0:64111").unwrap_or_else(|error| {
@@ -18,13 +21,9 @@ fn main() {
             }
         });
     }
-    let s = String::from("This is a test of a very long string that will take a while to say");
-    speak(&s);
-    stop_speaking();
-    //println!("{}", s);
 }
 
-fn handle_connection(con: TcpStream) -> Result<(), Box<dyn std::error::Error>> {
+fn handle_connection(con: TcpStream) -> Result<(), Box<dyn Error>> {
     let mut reader = BufReader::new(con);
     loop {
         let mut line = String::new();
@@ -32,13 +31,7 @@ fn handle_connection(con: TcpStream) -> Result<(), Box<dyn std::error::Error>> {
         if len == 0 {
             return Ok(());
         }
-        // Find a better way to do this
-        if line.ends_with("\n") {
-            line.pop();
-        }
-        if line.ends_with("\r") {
-            line.pop();
-        }
+        line = line.trim_end_matches(&['\n', '\r'][..]).to_string();
         let mut chars = line.chars();
         let command = match chars.next() {
             Some(c) => String::from(c),
@@ -54,8 +47,12 @@ fn handle_connection(con: TcpStream) -> Result<(), Box<dyn std::error::Error>> {
 fn process_command(command: &str, arg: &str) {
     match command {
         "s" | "l" => {
-            if arg != "" {
-                speak(arg);
+            if !arg.is_empty() {
+                let chunk_size = 10000;
+                let chunks = wrap(arg, chunk_size);
+                for chunk in chunks {
+                    speak(&chunk);
+                }
             }
         }
         "x" => {

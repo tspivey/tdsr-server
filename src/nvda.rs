@@ -1,5 +1,4 @@
 #[link(name = "nvdaControllerClient")]
-#[allow(dead_code)]
 extern "stdcall" {
     fn nvdaController_speakText(message: *const u16) -> libc::c_int;
     fn nvdaController_cancelSpeech();
@@ -11,5 +10,7 @@ pub fn speak(s: &str) {
 }
 
 pub fn stop_speaking() {
-    unsafe { nvdaController_cancelSpeech();   };
+    unsafe {
+        nvdaController_cancelSpeech();
+    };
 }
