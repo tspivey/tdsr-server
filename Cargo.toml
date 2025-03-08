@@ -1,9 +1,8 @@
 [package]
 name = "tdsr-server"
 version = "0.1.0"
-edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+edition = "2024"
+repository = "https://github.com/tspivey/tdsr-server"
 
 [dependencies]
 libc = "0.2.152"
