@@ -6,7 +6,7 @@ use std::{
     sync::{Arc, Mutex},
     thread,
 };
-use textwrap::wrap;
+use textwrap::{Options, wrap};
 use tts::Tts;
 
 type TtsRef = Arc<Mutex<Result<Tts, tts::Error>>>;
@@ -51,7 +51,8 @@ fn handle_connection(connection: TcpStream, tts: &TtsRef) -> Result<(), Box<dyn 
 fn process_command(command: &str, arg: &str, tts: &TtsRef) {
     match command {
         "s" | "l" if !arg.is_empty() => {
-            for chunk in wrap(arg, 10000) {
+            let options = Options::new(10000).break_words(false);
+            for chunk in wrap(arg, options) {
                 speak(&chunk, tts);
             }
         }
