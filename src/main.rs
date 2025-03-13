@@ -1,63 +1,82 @@
-mod nvda;
-use crate::nvda::*;
 use std::{
     error::Error,
     io::{BufRead, BufReader},
     net::{TcpListener, TcpStream},
-    process, thread,
+    process,
+    sync::{Arc, Mutex},
+    thread,
 };
-use textwrap::wrap;
+use textwrap::{Options, wrap};
+use tts::Tts;
 
-fn main() {
-    let listener = TcpListener::bind("0.0.0.0:64111").unwrap_or_else(|error| {
+type TtsRef = Arc<Mutex<Result<Tts, tts::Error>>>;
+
+fn main() -> Result<(), Box<dyn Error>> {
+    let listener = TcpListener::bind("0.0.0.0:64111").map_err(|error| {
         eprintln!("Unable to bind: {:?}", error);
         process::exit(1);
-    });
-    for con in listener.incoming() {
-        thread::spawn(|| {
-            let res = handle_connection(con.unwrap());
-            if let Err(e) = res {
+    })?;
+    let tts = Arc::new(Mutex::new(Tts::default()));
+    for connection in listener.incoming() {
+        let tts = Arc::clone(&tts);
+        thread::spawn(move || {
+            let connection = match connection {
+                Ok(conn) => conn,
+                Err(e) => {
+                    eprintln!("Failed to accept connection: {}", e);
+                    return;
+                }
+            };
+            if let Err(e) = handle_connection(connection, &tts) {
                 eprintln!("Error handling connection: {}", e);
             }
         });
     }
+    Ok(())
 }
 
-fn handle_connection(con: TcpStream) -> Result<(), Box<dyn Error>> {
-    let mut reader = BufReader::new(con);
-    loop {
-        let mut line = String::new();
-        let len = reader.read_line(&mut line)?;
-        if len == 0 {
-            return Ok(());
+fn handle_connection(connection: TcpStream, tts: &TtsRef) -> Result<(), Box<dyn Error>> {
+    let mut reader = BufReader::new(connection);
+    let mut line = String::new();
+    while reader.read_line(&mut line)? > 0 {
+        let trimmed_line = line.trim_end_matches(&['\n', '\r'][..]);
+        if let Some((command, arg)) = trimmed_line.chars().next().map(|c| (c, &trimmed_line[1..])) {
+            process_command(&command.to_string(), arg, tts);
         }
-        line = line.trim_end_matches(&['\n', '\r'][..]).to_string();
-        let mut chars = line.chars();
-        let command = match chars.next() {
-            Some(c) => String::from(c),
-            None => {
-                continue;
+        line.clear();
+    }
+    Ok(())
+}
+
+fn process_command(command: &str, arg: &str, tts: &TtsRef) {
+    match command {
+        "s" | "l" if !arg.is_empty() => {
+            let options = Options::new(10000).break_words(false);
+            for chunk in wrap(arg, options) {
+                speak(&chunk, tts);
             }
-        };
-        let arg: String = chars.collect();
-        process_command(&command, &arg);
+        }
+        "x" => stop_speaking(tts),
+        _ => (),
     }
 }
 
-fn process_command(command: &str, arg: &str) {
-    match command {
-        "s" | "l" => {
-            if !arg.is_empty() {
-                let chunk_size = 10000;
-                let chunks = wrap(arg, chunk_size);
-                for chunk in chunks {
-                    speak(&chunk);
-                }
+fn speak(text: &str, tts: &TtsRef) {
+    if let Ok(mut tts) = tts.lock() {
+        if let Ok(tts) = tts.as_mut() {
+            if let Err(e) = tts.speak(text, true) {
+                eprintln!("Failed to speak: {}", e);
             }
         }
-        "x" => {
-            stop_speaking();
+    }
+}
+
+fn stop_speaking(tts: &TtsRef) {
+    if let Ok(mut tts) = tts.lock() {
+        if let Ok(tts) = tts.as_mut() {
+            if let Err(e) = tts.stop() {
+                eprintln!("Failed to stop speaking: {}", e);
+            }
         }
-        _ => (),
     }
 }

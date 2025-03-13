@@ -1,12 +1,12 @@
 [package]
 name = "tdsr-server"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 repository = "https://github.com/tspivey/tdsr-server"
 
 [dependencies]
-libc = "0.2.152"
 textwrap = "0.16.2"
+tts = { version = "0.26.3", features = ["tolk"] }
 
 [profile.release]
 strip = true
