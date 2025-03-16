@@ -5,7 +5,9 @@ edition = "2024"
 repository = "https://github.com/tspivey/tdsr-server"
 
 [dependencies]
+tao = "0.32.8"
 textwrap = "0.16.2"
+tray-icon = "0.20.0"
 tts = { version = "0.26.3", features = ["tolk"] }
 
 [profile.release]
