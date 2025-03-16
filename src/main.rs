@@ -1,4 +1,5 @@
 #![windows_subsystem = "windows"]
+use native_dialog::{MessageDialog, MessageType};
 use std::{
     error::Error,
     io::{BufRead, BufReader},
@@ -26,7 +27,7 @@ enum UserEvent {
 
 fn main() -> Result<(), Box<dyn Error>> {
     let listener = TcpListener::bind("0.0.0.0:64111").map_err(|error| {
-        eprintln!("Unable to bind: {:?}", error);
+        show_error(&format!("Unable to bind: {:?}", error));
         process::exit(1);
     })?;
     let tts = Arc::new(Mutex::new(Tts::default()));
@@ -37,12 +38,12 @@ fn main() -> Result<(), Box<dyn Error>> {
                 let connection = match connection {
                     Ok(conn) => conn,
                     Err(e) => {
-                        eprintln!("Failed to accept connection: {}", e);
+                        show_error(&format!("Failed to accept connection: {}", e));
                         return;
                     }
                 };
                 if let Err(e) = handle_connection(connection, &tts) {
-                    eprintln!("Error handling connection: {}", e);
+                    show_error(&format!("Error handling connection: {}", e));
                 }
             });
         }
@@ -109,7 +110,7 @@ fn speak(text: &str, tts: &TtsRef) {
     if let Ok(mut tts) = tts.lock() {
         if let Ok(tts) = tts.as_mut() {
             if let Err(e) = tts.speak(text, true) {
-                eprintln!("Failed to speak: {}", e);
+                show_error(&format!("Failed to speak: {}", e));
             }
         }
     }
@@ -119,8 +120,16 @@ fn stop_speaking(tts: &TtsRef) {
     if let Ok(mut tts) = tts.lock() {
         if let Ok(tts) = tts.as_mut() {
             if let Err(e) = tts.stop() {
-                eprintln!("Failed to stop speaking: {}", e);
+                show_error(&format!("Failed to stop speaking: {}", e));
             }
         }
     }
+}
+
+fn show_error(message: &str) {
+    let _ = MessageDialog::new()
+        .set_title("Error")
+        .set_type(MessageType::Error)
+        .set_text(message)
+        .show_alert();
 }
