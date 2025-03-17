@@ -109,7 +109,7 @@ fn process_command(command: &str, arg: &str, tts: &TtsRef) {
 fn speak(text: &str, tts: &TtsRef) {
     if let Ok(mut tts) = tts.lock() {
         if let Ok(tts) = tts.as_mut() {
-            if let Err(e) = tts.speak(text, true) {
+            if let Err(e) = tts.speak(text, false) {
                 show_error(&format!("Failed to speak: {}", e));
             }
         }
