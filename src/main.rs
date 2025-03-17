@@ -1,6 +1,7 @@
 #![windows_subsystem = "windows"]
 use native_dialog::{MessageDialog, MessageType};
 use std::{
+    env,
     error::Error,
     io::{BufRead, BufReader},
     net::{TcpListener, TcpStream},
@@ -26,7 +27,13 @@ enum UserEvent {
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let listener = TcpListener::bind("0.0.0.0:64111").map_err(|error| {
+    let args: Vec<String> = env::args().collect();
+    let port = if args.len() > 1 {
+        args[1].parse::<u16>().unwrap_or(64111)
+    } else {
+        64111
+    };
+    let listener = TcpListener::bind(format!("0.0.0.0:{}", port)).map_err(|error| {
         show_error(&format!("Unable to bind: {:?}", error));
         process::exit(1);
     })?;
@@ -128,7 +135,7 @@ fn stop_speaking(tts: &TtsRef) {
 
 fn show_error(message: &str) {
     let _ = MessageDialog::new()
-        .set_title("Error")
+        .set_title("TDSR Server Error")
         .set_type(MessageType::Error)
         .set_text(message)
         .show_alert();
