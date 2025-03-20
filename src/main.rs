@@ -3,7 +3,7 @@ use native_dialog::{MessageDialog, MessageType};
 use std::{
     env,
     error::Error,
-    io::{BufRead, BufReader},
+    io::{self, BufRead, BufReader},
     net::{TcpListener, TcpStream},
     process,
     sync::{Arc, Mutex},
@@ -38,9 +38,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         process::exit(1);
     })?;
     let tts = Arc::new(Mutex::new(Tts::default()));
+    let tts_socket = Arc::clone(&tts);
     thread::spawn(move || {
         for connection in listener.incoming() {
-            let tts = Arc::clone(&tts);
+            let tts = Arc::clone(&tts_socket);
             thread::spawn(move || {
                 let connection = match connection {
                     Ok(conn) => conn,
@@ -53,6 +54,23 @@ fn main() -> Result<(), Box<dyn Error>> {
                     show_error(&format!("Error handling connection: {}", e));
                 }
             });
+        }
+    });
+    let tts_stdin = Arc::clone(&tts);
+    thread::spawn(move || {
+        let stdin = io::stdin();
+        let reader = BufReader::new(stdin.lock());
+        for line in reader.lines() {
+            match line {
+                Ok(input) => {
+                    if let Some((command, arg)) = input.chars().next().map(|c| (c, &input[1..])) {
+                        process_command(&command.to_string(), arg, &tts_stdin);
+                    }
+                }
+                Err(e) => {
+                    show_error(&format!("Failed to read from stdin: {}", e));
+                }
+            }
         }
     });
     let event_loop = EventLoopBuilder::<UserEvent>::with_user_event().build();
