@@ -6,7 +6,6 @@ use std::{
     io::{BufRead, BufReader},
     net::{TcpListener, TcpStream},
     process,
-    sync::{Arc, Mutex},
     thread,
 };
 use tao::{
@@ -19,8 +18,6 @@ use tray_icon::{
     menu::{Menu, MenuEvent, MenuItem},
 };
 use tts::Tts;
-
-type TtsRef = Arc<Mutex<Result<Tts, tts::Error>>>;
 
 enum UserEvent {
     MenuEvent(tray_icon::menu::MenuEvent),
@@ -37,10 +34,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         show_error(&format!("Unable to bind: {:?}", error));
         process::exit(1);
     })?;
-    let tts = Arc::new(Mutex::new(Tts::default()));
     thread::spawn(move || {
         for connection in listener.incoming() {
-            let tts = Arc::clone(&tts);
             thread::spawn(move || {
                 let connection = match connection {
                     Ok(conn) => conn,
@@ -49,7 +44,7 @@ fn main() -> Result<(), Box<dyn Error>> {
                         return;
                     }
                 };
-                if let Err(e) = handle_connection(connection, &tts) {
+                if let Err(e) = handle_connection(connection) {
                     show_error(&format!("Error handling connection: {}", e));
                 }
             });
@@ -87,20 +82,21 @@ fn main() -> Result<(), Box<dyn Error>> {
     });
 }
 
-fn handle_connection(connection: TcpStream, tts: &TtsRef) -> Result<(), Box<dyn Error>> {
+fn handle_connection(connection: TcpStream) -> Result<(), Box<dyn Error>> {
     let mut reader = BufReader::new(connection);
     let mut line = String::new();
+    let mut tts = Tts::default()?;
     while reader.read_line(&mut line)? > 0 {
         let trimmed_line = line.trim_end_matches(&['\n', '\r'][..]);
         if let Some((command, arg)) = trimmed_line.chars().next().map(|c| (c, &trimmed_line[1..])) {
-            process_command(&command.to_string(), arg, tts);
+            process_command(&command.to_string(), arg, &mut tts);
         }
         line.clear();
     }
     Ok(())
 }
 
-fn process_command(command: &str, arg: &str, tts: &TtsRef) {
+fn process_command(command: &str, arg: &str, tts: &mut Tts) {
     match command {
         "s" | "l" if !arg.is_empty() => {
             let options = Options::new(10000).break_words(false);
@@ -113,23 +109,15 @@ fn process_command(command: &str, arg: &str, tts: &TtsRef) {
     }
 }
 
-fn speak(text: &str, tts: &TtsRef) {
-    if let Ok(mut tts) = tts.lock() {
-        if let Ok(tts) = tts.as_mut() {
-            if let Err(e) = tts.speak(text, false) {
-                show_error(&format!("Failed to speak: {}", e));
-            }
-        }
+fn speak(text: &str, tts: &mut Tts) {
+    if let Err(e) = tts.speak(text, false) {
+        show_error(&format!("Failed to speak: {}", e));
     }
 }
 
-fn stop_speaking(tts: &TtsRef) {
-    if let Ok(mut tts) = tts.lock() {
-        if let Ok(tts) = tts.as_mut() {
-            if let Err(e) = tts.stop() {
-                show_error(&format!("Failed to stop speaking: {}", e));
-            }
-        }
+fn stop_speaking(tts: &mut Tts) {
+    if let Err(e) = tts.stop() {
+        show_error(&format!("Failed to stop speaking: {}", e));
     }
 }
 
