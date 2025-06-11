@@ -9,7 +9,7 @@ use std::{
     thread,
 };
 use tao::{
-    event::Event,
+    event::{Event, StartCause},
     event_loop::{ControlFlow, EventLoopBuilder},
 };
 use textwrap::{Options, wrap};
@@ -63,7 +63,7 @@ fn run_tray_app() -> Result<()> {
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Wait;
         match event {
-            Event::NewEvents(tao::event::StartCause::Init) => {
+            Event::NewEvents(StartCause::Init) => {
                 TrayIconBuilder::new()
                     .with_menu(Box::new(menu.clone()))
                     .with_tooltip("TDSR Server")
@@ -93,9 +93,9 @@ fn handle_connection(stream: TcpStream) -> Result<()> {
 }
 
 fn process_command(cmd: &str, args: &str, tts: &mut Tts) -> Result<()> {
-    match cmd {
-        "s" | "l" if !args.is_empty() => speak_text(args, tts),
-        "x" => stop_speech(tts),
+    match (cmd, args.is_empty()) {
+        ("s" | "l", false) => speak_text(args, tts),
+        ("x", _) => stop_speech(tts),
         _ => Ok(()),
     }
 }
