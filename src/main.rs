@@ -36,7 +36,7 @@ fn main() -> Result<()> {
 }
 
 fn start_server(port: u16) -> Result<()> {
-    let listener = TcpListener::bind(format!("0.0.0.0:{port}"))
+    let listener = TcpListener::bind(("0.0.0.0", port))
         .with_context(|| format!("Failed to bind to port {port}"))?;
     thread::spawn(move || {
         for stream in listener.incoming() {
@@ -95,7 +95,10 @@ fn handle_connection(stream: TcpStream) -> Result<()> {
 fn process_command(cmd: &str, args: &str, tts: &mut Tts) -> Result<()> {
     match (cmd, args.is_empty()) {
         ("s" | "l", false) => speak_text(args, tts),
-        ("x", _) => stop_speech(tts),
+        ("x", _) => {
+            tts.stop().context("Failed to stop TTS")?;
+            Ok(())
+        }
         _ => Ok(()),
     }
 }
@@ -105,11 +108,6 @@ fn speak_text(text: &str, tts: &mut Tts) -> Result<()> {
     for chunk in wrap(text, options) {
         tts.speak(&*chunk, false).context("TTS speak failed")?;
     }
-    Ok(())
-}
-
-fn stop_speech(tts: &mut Tts) -> Result<()> {
-    tts.stop().context("Failed to stop TTS")?;
     Ok(())
 }
 
