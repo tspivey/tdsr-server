@@ -4,7 +4,7 @@ use anyhow::{Context, Result};
 use native_dialog::{MessageDialog, MessageType};
 use std::{
     env,
-    io::BufRead,
+    io::{BufReader, BufRead},
     net::{TcpListener, TcpStream},
     thread,
 };
@@ -80,7 +80,7 @@ fn run_tray_app() -> Result<()> {
 }
 
 fn handle_connection(stream: TcpStream) -> Result<()> {
-    let reader = std::io::BufReader::new(stream);
+    let reader = BufReader::new(stream);
     let mut tts = Tts::default().context("Failed to initialize TTS")?;
     for line in reader.lines() {
         let line = line.context("Failed to read line")?;
