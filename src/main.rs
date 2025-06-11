@@ -1,10 +1,10 @@
 #![windows_subsystem = "windows"]
 
-use anyhow::{Context, Result};
+use anyhow::{Context, Error, Result};
 use native_dialog::{MessageDialog, MessageType};
 use std::{
     env,
-    io::{BufReader, BufRead},
+    io::{BufRead, BufReader},
     net::{TcpListener, TcpStream},
     thread,
 };
@@ -113,7 +113,7 @@ fn stop_speech(tts: &mut Tts) -> Result<()> {
     Ok(())
 }
 
-fn log_error(err: anyhow::Error) {
+fn log_error(err: Error) {
     let _ = MessageDialog::new()
         .set_title("TDSR Server Error")
         .set_type(MessageType::Error)
