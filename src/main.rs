@@ -1,5 +1,5 @@
 #![windows_subsystem = "windows"]
-use native_dialog::{MessageDialog, MessageType};
+use native_dialog::{DialogBuilder, MessageLevel};
 use std::{
 	env,
 	error::Error,
@@ -118,6 +118,9 @@ fn stop_speaking(tts: &mut Tts) {
 }
 
 fn show_error(message: &str) {
-	let _ =
-		MessageDialog::new().set_title("TDSR Server Error").set_type(MessageType::Error).set_text(message).show_alert();
+	let _ = DialogBuilder::message()
+		.set_title("TDSR Server Error")
+		.set_level(MessageLevel::Error)
+		.set_text(message)
+		.alert();
 }

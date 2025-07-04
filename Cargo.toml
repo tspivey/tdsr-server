@@ -5,10 +5,10 @@ edition = "2024"
 repository = "https://github.com/tspivey/tdsr-server"
 
 [dependencies]
-native-dialog = "0.7.0"
-tao = "0.32.8"
+native-dialog = "0.9.0"
+tao = "0.34.0"
 textwrap = "0.16.2"
-tray-icon = "0.20.1"
+tray-icon = "0.21.0"
 tts = { version = "0.26.3", features = ["tolk"] }
 
 [profile.release]
