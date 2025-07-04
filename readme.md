@@ -1,23 +1,18 @@
 # tdsr server
-This is a Windows server designed to take input from tdsr and output to NVDA.
+This is a Windows server designed to take input from tdsr and output to NVDA, JAWS, or any other screen reader/TTS.
 
 ## Usage
-1. Download the NVDA controller client from https://www.nvaccess.org/files/nvda/releases/stable/
-and extract it. You only need `nvdaControllerClient64.dll` and `nvdaControllerClient64.lib`.
-2. Build it with `cargo build`, use `cargo run` or run `target\debug\tdsr-server`.
-It will listen for connections on port 64111.
+Build it with `cargo build --release` and run `target\debug\tdsr-server`. It will listen for connections on port 64111 by default, but you can specify a different port as a command-line argument.
 
 On the machine running tdsr, create a shell script, something like:
+
 ```shell
 #!/bin/bash
 exec socat - TCP4:SERVER_IP:64111,nodelay
 ```
+Replace `SERVER_IP` with the IP address of the server, and 64111 with your custom port, if you specified one.
 
-Replace `SERVER_IP` with the IP address of the server.
+The server spawns a simple system tray icon. Right clicking on it will allow you to cleanly exit the server.
 
 ## Security
-This program binds to all interfaces on port 64111. The only things it lets you do are to have NVDA speak a string, and stop speech.
-
-## Known bugs
-1. This uses `BufReader::read_line` to read input. I don't know how to limit the amount of data it reads without abandoning it and doing my own data parsing,
-so there's no limit on the length of a line that can be received.
+This program binds to all interfaces on port 64111. The only things it lets you do are to have TTS speak a string and stop speaking.
