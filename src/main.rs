@@ -99,8 +99,9 @@ fn handle_connection(connection: TcpStream) -> Result<(), Box<dyn Error>> {
 fn process_command(command: &str, arg: &str, tts: &mut Tts) {
     match command {
         "s" | "l" if !arg.is_empty() => {
+            let cleaned_arg = arg.replace('\u{23CE}', " ");
             let options = Options::new(10000).break_words(false);
-            for chunk in wrap(arg, options) {
+            for chunk in wrap(&cleaned_arg, options) {
                 speak(&chunk, tts);
             }
         }
