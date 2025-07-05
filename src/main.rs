@@ -1,8 +1,9 @@
 #![windows_subsystem = "windows"]
+
+use anyhow::{Context, Result};
 use native_dialog::{DialogBuilder, MessageLevel};
 use std::{
 	env,
-	error::Error,
 	io::{BufRead, BufReader},
 	net::{TcpListener, TcpStream},
 	process, thread,
@@ -22,25 +23,20 @@ enum UserEvent {
 	MenuEvent(tray_icon::menu::MenuEvent),
 }
 
-fn main() -> Result<(), Box<dyn Error>> {
+fn main() -> Result<()> {
 	let args: Vec<String> = env::args().collect();
-	let port = if args.len() > 1 { args[1].parse::<u16>().unwrap_or(64111) } else { 64111 };
-	let listener = TcpListener::bind(format!("0.0.0.0:{}", port)).map_err(|error| {
-		show_error(&format!("Unable to bind: {:?}", error));
-		process::exit(1);
-	})?;
+	let port = args.get(1).and_then(|s| s.parse::<u16>().ok()).unwrap_or(64111);
+	let listener = TcpListener::bind(("0.0.0.0", port))
+		.with_context(|| format!("Unable to bind to port {}", port))
+		.map_err(|e| {
+			show_error(&format!("{:?}", e));
+			process::exit(1);
+		})?;
 	thread::spawn(move || {
 		for connection in listener.incoming() {
 			thread::spawn(move || {
-				let connection = match connection {
-					Ok(conn) => conn,
-					Err(e) => {
-						show_error(&format!("Failed to accept connection: {}", e));
-						return;
-					}
-				};
-				if let Err(e) = handle_connection(connection) {
-					show_error(&format!("Error handling connection: {}", e));
+				if let Err(e) = connection.context("Failed to accept connection").and_then(handle_connection) {
+					show_error(&format!("{:?}", e));
 				}
 			});
 		}
@@ -63,6 +59,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 						.with_menu(Box::new(tray_menu.clone()))
 						.with_tooltip("TDSR Server")
 						.build()
+						.context("Failed to create tray icon")
 						.unwrap(),
 				);
 			}
@@ -77,10 +74,10 @@ fn main() -> Result<(), Box<dyn Error>> {
 	});
 }
 
-fn handle_connection(connection: TcpStream) -> Result<(), Box<dyn Error>> {
+fn handle_connection(connection: TcpStream) -> Result<()> {
 	let mut reader = BufReader::new(connection);
 	let mut line = String::new();
-	let mut tts = Tts::default()?;
+	let mut tts = Tts::default().context("Failed to initialize TTS")?;
 	while reader.read_line(&mut line)? > 0 {
 		let trimmed_line = line.trim_end_matches(&['\n', '\r'][..]);
 		if let Some((command, arg)) = trimmed_line.chars().next().map(|c| (c, &trimmed_line[1..])) {
@@ -107,13 +104,13 @@ fn process_command(command: &str, arg: &str, tts: &mut Tts) {
 
 fn speak(text: &str, tts: &mut Tts) {
 	if let Err(e) = tts.speak(text, false) {
-		show_error(&format!("Failed to speak: {}", e));
+		show_error(&format!("Failed to speak: {:?}", e));
 	}
 }
 
 fn stop_speaking(tts: &mut Tts) {
 	if let Err(e) = tts.stop() {
-		show_error(&format!("Failed to stop speaking: {}", e));
+		show_error(&format!("Failed to stop speaking: {:?}", e));
 	}
 }
 
