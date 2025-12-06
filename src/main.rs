@@ -76,7 +76,8 @@ fn run_tray_application() {
 				tray_icon = match TrayIconBuilder::new()
 					.with_menu(Box::new(tray_menu.clone()))
 					.with_tooltip("TDSR Server")
-					.build() {
+					.build()
+				{
 					Ok(icon) => Some(icon),
 					Err(e) => {
 						show_error(&format!("Tray icon error: {e:?}"));
