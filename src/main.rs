@@ -8,7 +8,6 @@ use std::{
 	process, thread,
 };
 
-use anyhow::{Context, Result};
 use native_dialog::{DialogBuilder, MessageLevel};
 use tao::{
 	event::Event,
@@ -29,26 +28,35 @@ enum UserEvent {
 const DEFAULT_PORT: u16 = 64111;
 const MAX_LINE_LENGTH: usize = 10000;
 
-fn main() -> Result<()> {
+fn main() {
 	let port = parse_port_from_args().unwrap_or(DEFAULT_PORT);
-	let listener = TcpListener::bind(("0.0.0.0", port)).with_context(|| format!("Unable to bind to port {port}"))?;
+	let listener = match TcpListener::bind(("0.0.0.0", port)) {
+		Ok(listener) => listener,
+		Err(e) => {
+			show_error(&format!("Unable to bind to port {port}: {e}"));
+			return;
+		}
+	};
 	thread::spawn(move || {
 		for connection in listener.incoming() {
-			thread::spawn(move || {
-				if let Err(e) = connection.context("Failed to accept connection").and_then(handle_connection) {
-					show_error(&format!("Connection error: {e:?}"));
+			thread::spawn(move || match connection {
+				Ok(stream) => {
+					if let Err(e) = handle_connection(stream) {
+						show_error(&format!("Connection error: {e}"));
+					}
 				}
+				Err(e) => show_error(&format!("Failed to accept connection: {e}")),
 			});
 		}
 	});
-	run_tray_application()
+	run_tray_application();
 }
 
 fn parse_port_from_args() -> Option<u16> {
 	env::args().nth(1)?.parse().ok()
 }
 
-fn run_tray_application() -> Result<()> {
+fn run_tray_application() {
 	let event_loop = EventLoopBuilder::<UserEvent>::with_user_event().build();
 	let proxy = event_loop.create_proxy();
 	MenuEvent::set_event_handler(Some(move |event| {
@@ -57,21 +65,24 @@ fn run_tray_application() -> Result<()> {
 	let mut tray_icon = None;
 	let tray_menu = Menu::new();
 	let quit_item = MenuItem::new("&Quit", true, None);
-	tray_menu.append(&quit_item)?;
+	if let Err(e) = tray_menu.append(&quit_item) {
+		show_error(&format!("Failed to build tray menu: {e:?}"));
+		return;
+	}
 	event_loop.run(move |event, _, control_flow| {
 		*control_flow = ControlFlow::Wait;
 		match event {
 			Event::NewEvents(tao::event::StartCause::Init) => {
-				tray_icon = TrayIconBuilder::new()
+				tray_icon = match TrayIconBuilder::new()
 					.with_menu(Box::new(tray_menu.clone()))
 					.with_tooltip("TDSR Server")
-					.build()
-					.context("Failed to create tray icon")
-					.map_err(|e| {
+					.build() {
+					Ok(icon) => Some(icon),
+					Err(e) => {
 						show_error(&format!("Tray icon error: {e:?}"));
 						process::exit(1);
-					})
-					.ok();
+					}
+				};
 			}
 			Event::UserEvent(UserEvent::MenuEvent(event)) => {
 				if event.id == quit_item.id() {
@@ -86,11 +97,11 @@ fn run_tray_application() -> Result<()> {
 	});
 }
 
-fn handle_connection(connection: TcpStream) -> Result<()> {
+fn handle_connection(connection: TcpStream) -> Result<(), String> {
 	let mut reader = BufReader::new(connection);
 	let mut line = String::new();
-	let mut tts = Tts::default().context("Failed to initialize TTS")?;
-	while reader.read_line(&mut line)? > 0 {
+	let mut tts = Tts::default().map_err(|e| format!("Failed to initialize TTS: {e:?}"))?;
+	while reader.read_line(&mut line).map_err(|e| format!("Failed to read line: {e}"))? > 0 {
 		let trimmed_line = line.trim_end_matches(['\n', '\r']);
 		if let Some((command, arg)) = trimmed_line.split_at_checked(1) {
 			process_command(command, arg, &mut tts);

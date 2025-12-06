@@ -6,7 +6,6 @@ repository = "https://github.com/tspivey/tdsr-server"
 rust-version = "1.85.1"
 
 [dependencies]
-anyhow = "1.0.100"
 native-dialog = "0.9.4"
 tao = "0.34.5"
 textwrap = "0.16.2"
