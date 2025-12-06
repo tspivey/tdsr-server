@@ -13,7 +13,6 @@ use tao::{
 	event::Event,
 	event_loop::{ControlFlow, EventLoopBuilder},
 };
-use textwrap::{Options, wrap};
 use tray_icon::{
 	TrayIconBuilder,
 	menu::{Menu, MenuEvent, MenuItem},
@@ -116,13 +115,31 @@ fn process_command(command: &str, arg: &str, tts: &mut Tts) {
 	match command {
 		"s" | "l" if !arg.is_empty() => {
 			let cleaned_text = arg.replace('\u{23CE}', " ");
-			let options = Options::new(MAX_LINE_LENGTH).break_words(false);
-			for chunk in wrap(&cleaned_text, &options) {
-				speak(&chunk, tts);
-			}
+			speak_in_chunks(&cleaned_text, tts);
 		}
 		"x" => stop_speaking(tts),
 		_ => {}
+	}
+}
+
+fn speak_in_chunks(text: &str, tts: &mut Tts) {
+	let mut chunk = String::new();
+	for word in text.split_whitespace() {
+		if chunk.is_empty() {
+			chunk.push_str(word);
+			continue;
+		}
+		let next_len = chunk.len() + 1 + word.len();
+		if next_len > MAX_LINE_LENGTH {
+			speak(&chunk, tts);
+			chunk.clear();
+		} else {
+			chunk.push(' ');
+		}
+		chunk.push_str(word);
+	}
+	if !chunk.is_empty() {
+		speak(&chunk, tts);
 	}
 }
 

@@ -8,7 +8,6 @@ rust-version = "1.85.1"
 [dependencies]
 native-dialog = "0.9.4"
 tao = "0.34.5"
-textwrap = "0.16.2"
 tray-icon = "0.21.2"
 tts = { version = "0.26.3", features = ["tolk"] }
 
