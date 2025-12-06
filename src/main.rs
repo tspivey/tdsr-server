@@ -1,3 +1,4 @@
+#![warn(clippy::all, clippy::pedantic, clippy::nursery)]
 #![windows_subsystem = "windows"]
 
 use std::{
@@ -74,7 +75,9 @@ fn run_tray_application() -> Result<()> {
 			}
 			Event::UserEvent(UserEvent::MenuEvent(event)) => {
 				if event.id == quit_item.id() {
-					tray_icon.take();
+					if let Some(icon) = tray_icon.take() {
+						drop(icon);
+					}
 					*control_flow = ControlFlow::Exit;
 				}
 			}
