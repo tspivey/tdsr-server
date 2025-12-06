@@ -3,6 +3,7 @@ name = "tdsr-server"
 version = "0.2.0"
 edition = "2024"
 repository = "https://github.com/tspivey/tdsr-server"
+rust-version = "1.85.1"
 
 [dependencies]
 anyhow = "1.0.100"
