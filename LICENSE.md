@@ -1,6 +1,6 @@
 zlib License
 
-Copyright (C) 2024-2025 Quin Gillespie and Tyler Spivey
+Copyright (C) 2024-2026 Quin Gillespie and Tyler Spivey
 
 This software is provided 'as-is', without any express or implied warranty.  In no event will the authors be held liable for any damages arising from the use of this software.
 
