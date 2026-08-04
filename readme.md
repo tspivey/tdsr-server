@@ -1,8 +1,8 @@
 # tdsr server
-This is a Windows server designed to take input from tdsr and output to NVDA, JAWS, or any other screen reader/TTS.
+This is a Rust server designed to take input from tdsr and output to NVDA, JAWS, or any other screen reader/text-to-speech provider.
 
 ## Usage
-Build it with `cargo build --release` and run `target\debug\tdsr-server`. It will listen for connections on port 64111 by default, but you can specify a different port as a command-line argument.
+Build it with `cargo build --release` and run `target\release\tdsr-server`. It will listen for connections on port 64111 by default, but you can specify a different port as a command-line argument.
 
 On the machine running tdsr, create a shell script, something like:
 ```shell
