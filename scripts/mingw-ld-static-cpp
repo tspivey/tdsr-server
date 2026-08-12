@@ -1,0 +1,13 @@
+#!/bin/bash
+args=()
+for arg in "$@"; do
+    case "$arg" in
+        -lstdc++|-lgcc|-lgcc_eh|-lgcc_s|-lpthread)
+            args+=("-Wl,-Bstatic" "$arg" "-Wl,-Bdynamic")
+            ;;
+        *)
+            args+=("$arg")
+            ;;
+    esac
+done
+exec x86_64-w64-mingw32-gcc "${args[@]}"

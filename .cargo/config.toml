@@ -1,0 +1,9 @@
+[target.x86_64-pc-windows-gnu]
+rustflags = [
+    "-C", "link-args=-Wl,--subsystem,windows",
+]
+linker = "scripts/mingw-ld-static-cpp"
+
+[env]
+CFLAGS_x86_64-pc-windows-gnu = "-include windows.h"
+CXXFLAGS_x86_64-pc-windows-gnu = "-include windows.h"

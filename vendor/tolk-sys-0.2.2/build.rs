@@ -43,10 +43,17 @@ fn main() -> io::Result<()> {
         .file(format!("{}/src/ScreenReaderDriverWE.cpp", root))
         .file(format!("{}/src/ScreenReaderDriverZT.cpp", root))
         .file(format!("{}/src/ScreenReaderDriverSAPI.cpp", root))
+        .compile("tolk");
+    cc::Build::new()
+        .define("_EXPORTING", "")
+        .define("UNICODE", "")
         .file(format!("{}/src/fsapi.c", root))
         .file(format!("{}/src/wineyes.c", root))
         .file(format!("{}/src/zt.c", root))
-        .compile("tolk");
-    println!("cargo:rustc-flags=-l User32 -l Ole32 -l OleAut32");
+        .compile("tolk_c");
+    println!("cargo:rustc-link-lib=user32");
+    println!("cargo:rustc-link-lib=ole32");
+    println!("cargo:rustc-link-lib=oleaut32");
+    println!("cargo:rustc-link-lib=sapi");
     Ok(())
 }
