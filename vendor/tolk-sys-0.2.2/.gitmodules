@@ -1,0 +1,3 @@
+[submodule "vendor/tolk"]
+	path = vendor/tolk
+	url = https://github.com/dkager/tolk

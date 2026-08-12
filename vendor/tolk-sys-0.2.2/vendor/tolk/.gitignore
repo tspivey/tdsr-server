@@ -1,0 +1,11 @@
+*.obj
+*.res
+*.exe
+*.dll
+*.exp
+*.lib
+*.class
+*.jar
+*.pyo
+*.html
+*.zip
