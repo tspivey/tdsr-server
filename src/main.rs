@@ -2,7 +2,7 @@
 #![windows_subsystem = "windows"]
 
 use std::{
-	env,
+	env, fs,
 	io::{BufRead, BufReader},
 	net::{TcpListener, TcpStream},
 	process, thread,
@@ -29,6 +29,7 @@ const MAX_LINE_LENGTH: usize = 10000;
 
 fn main() {
 	let port = parse_port_from_args().unwrap_or(DEFAULT_PORT);
+	let letter_pitch_percent_change = read_letter_pitch_percent_change();
 	let listener = match TcpListener::bind(("0.0.0.0", port)) {
 		Ok(listener) => listener,
 		Err(e) => {
@@ -40,7 +41,7 @@ fn main() {
 		for connection in listener.incoming() {
 			thread::spawn(move || match connection {
 				Ok(stream) => {
-					if let Err(e) = handle_connection(stream) {
+					if let Err(e) = handle_connection(stream, letter_pitch_percent_change) {
 						show_error(&format!("Connection error: {e}"));
 					}
 				}
@@ -97,28 +98,59 @@ fn run_tray_application() {
 	});
 }
 
-fn handle_connection(connection: TcpStream) -> Result<(), String> {
+fn handle_connection(connection: TcpStream, letter_pitch_percent_change: u32) -> Result<(), String> {
 	let mut reader = BufReader::new(connection);
 	let mut line = String::new();
 	let mut tts = Tts::default().map_err(|e| format!("Failed to initialize TTS: {e:?}"))?;
 	while reader.read_line(&mut line).map_err(|e| format!("Failed to read line: {e}"))? > 0 {
 		let trimmed_line = line.trim_end_matches(['\n', '\r']);
 		if let Some((command, arg)) = trimmed_line.split_at_checked(1) {
-			process_command(command, arg, &mut tts);
+			process_command(command, arg, letter_pitch_percent_change, &mut tts);
 		}
 		line.clear();
 	}
 	Ok(())
 }
 
-fn process_command(command: &str, arg: &str, tts: &mut Tts) {
+fn process_command(command: &str, arg: &str, letter_pitch_percent_change: u32, tts: &mut Tts) {
 	match command {
-		"s" | "l" if !arg.is_empty() => {
+		"s" if !arg.is_empty() => {
 			let cleaned_text = arg.replace('\u{23CE}', " ");
 			speak_in_chunks(&cleaned_text, tts);
 		}
+		"l" if !arg.is_empty() => {
+			let cleaned_text = arg.replace('\u{23CE}', " ");
+			speak_as_letters(&cleaned_text, letter_pitch_percent_change, tts);
+		}
 		"x" => stop_speaking(tts),
 		_ => {}
+	}
+}
+
+fn read_letter_pitch_percent_change() -> u32 {
+	env::current_exe()
+		.ok()
+		.and_then(|mut path| {
+			path.set_file_name("pitch");
+			fs::read_to_string(path).ok()
+		})
+		.and_then(|value| value.trim().parse().ok())
+		.unwrap_or(47)
+}
+
+fn speak_as_letters(text: &str, letter_pitch_percent_change: u32, tts: &mut Tts) {
+	let mut ssml = String::from("<speak>");
+	let uppercase_pitch = 100u32.saturating_add(letter_pitch_percent_change);
+	for ch in text.chars() {
+		if ch.is_uppercase() {
+			ssml.push_str(&format!("<prosody pitch=\"{uppercase_pitch}%\">{ch}</prosody>"));
+		} else {
+			ssml.push(ch);
+		}
+	}
+	ssml.push_str("</speak>");
+	if tts.speak_ssml(&ssml).is_err() {
+		speak_in_chunks(text, tts);
 	}
 }
 
