@@ -13,21 +13,28 @@
 
 ScreenReaderDriverNVDA::ScreenReaderDriverNVDA() :
   ScreenReaderDriver(L"NVDA", true, true),
-  #ifdef _WIN64
-  controller(LoadLibrary(L"nvdaControllerClient64.dll")),
-  #else
-  controller(LoadLibrary(L"nvdaControllerClient32.dll")),
-  #endif
+  controller(LoadLibrary(L"nvdaControllerClient.dll")),
   nvdaController_speakText(NULL),
   nvdaController_brailleMessage(NULL),
   nvdaController_cancelSpeech(NULL),
-  nvdaController_testIfRunning(NULL)
+  nvdaController_testIfRunning(NULL),
+  nvdaController_speakSsml(NULL)
 {
+  // Try the new unsuffixed DLL name first (NVDA 2026.1.1+),
+  // then fall back to the old bitness-suffixed names.
+  if (!controller) {
+    #ifdef _WIN64
+    controller = LoadLibrary(L"nvdaControllerClient64.dll");
+    #else
+    controller = LoadLibrary(L"nvdaControllerClient32.dll");
+    #endif
+  }
   if (controller) {
     nvdaController_speakText = (NVDAController_speakText)GetProcAddress(controller, "nvdaController_speakText");
     nvdaController_brailleMessage = (NVDAController_brailleMessage)GetProcAddress(controller, "nvdaController_brailleMessage");
     nvdaController_cancelSpeech = (NVDAController_cancelSpeech)GetProcAddress(controller, "nvdaController_cancelSpeech");
     nvdaController_testIfRunning = (NVDAController_testIfRunning)GetProcAddress(controller, "nvdaController_testIfRunning");
+    nvdaController_speakSsml = (NVDAController_speakSsml)GetProcAddress(controller, "nvdaController_speakSsml");
   }
 }
 
@@ -54,6 +61,11 @@ bool ScreenReaderDriverNVDA::Silence() {
 bool ScreenReaderDriverNVDA::IsActive() {
   // This needs an extra check because System Access pretends to be NVDA.
   if (nvdaController_testIfRunning) return  (!!FindWindow(L"wxWindowClassNR", L"NVDA") && nvdaController_testIfRunning() == 0);
+  return false;
+}
+
+bool ScreenReaderDriverNVDA::SpeakSsml(const wchar_t *ssml) {
+  if (nvdaController_speakSsml) return (nvdaController_speakSsml(ssml, -1, 0, 1) == 0);
   return false;
 }
 

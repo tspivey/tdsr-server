@@ -150,4 +150,10 @@ TOLK_DLL_DECLSPEC bool TOLK_CALL Tolk_Silence() {
   return false;
 }
 
+TOLK_DLL_DECLSPEC bool TOLK_CALL Tolk_SpeakSsml(const wchar_t *ssml) {
+  if (ssml && Tolk_DetectScreenReader())
+    return g_currentScreenReaderDriver->SpeakSsml(ssml);
+  return false;
+}
+
 } // extern "C"

@@ -29,7 +29,17 @@ impl Backend for Tolk {
     fn supported_features(&self) -> Features {
         Features {
             stop: true,
+            ssml: true,
             ..Default::default()
+        }
+    }
+
+    fn speak_ssml(&mut self, ssml: &str) -> Result<(), Error> {
+        trace!("speak_ssml({})", ssml);
+        if tolk::speak_ssml(ssml) {
+            Ok(())
+        } else {
+            Err(Error::UnsupportedFeature)
         }
     }
 

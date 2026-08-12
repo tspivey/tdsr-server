@@ -137,6 +137,14 @@ TOLK_DLL_DECLSPEC bool TOLK_CALL Tolk_IsSpeaking();
  */
 TOLK_DLL_DECLSPEC bool TOLK_CALL Tolk_Silence();
 
+/**
+ *  Name:         Tolk_SpeakSsml
+ *  Description:  Speaks SSML through the current screen reader driver, if one is set and supports SSML output. If none is set or if it encountered an error, tries to detect the currently active screen reader before speaking the SSML. Currently only the NVDA driver supports this. The SSML is spoken asynchronously with normal priority and unchanged symbol level. You should call Tolk_Load once before using this function.
+ *  Parameters:   ssml: SSML markup to speak.
+ *  Returns:      true on success, false otherwise.
+ */
+TOLK_DLL_DECLSPEC bool TOLK_CALL Tolk_SpeakSsml(const wchar_t *ssml);
+
 #ifdef __cplusplus
 } // extern "C"
 #endif // __cplusplus

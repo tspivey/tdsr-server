@@ -22,6 +22,8 @@ extern "C" {
 
     pub fn Tolk_IsSpeaking() -> bool;
     pub fn Tolk_Silence() -> bool;
+
+    pub fn Tolk_SpeakSsml(ssml: *const wchar_t) -> bool;
 }
 
 #[test]

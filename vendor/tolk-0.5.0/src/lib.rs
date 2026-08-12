@@ -9,6 +9,15 @@ lazy_static! {
     static ref TOLK: Mutex<Option<Arc<Tolk>>> = Mutex::new(None);
 }
 
+/// Speaks SSML through the active screen-reader driver.
+pub fn speak_ssml<S: Into<String>>(ssml: S) -> bool {
+    let ssml = U16CString::from_str(ssml.into());
+    match ssml {
+        Ok(ssml) => unsafe { Tolk_SpeakSsml(ssml.as_ptr()) },
+        Err(_) => false,
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct Tolk;
 

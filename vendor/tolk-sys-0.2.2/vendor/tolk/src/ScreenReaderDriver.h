@@ -28,6 +28,7 @@ public:
   virtual bool Silence() = 0;
   virtual bool IsActive() = 0;
   virtual bool Output(const wchar_t *str, bool interrupt) = 0;
+  virtual bool SpeakSsml(const wchar_t *ssml) { return false; }
 
 public:
   const wchar_t * GetName() { return name; }

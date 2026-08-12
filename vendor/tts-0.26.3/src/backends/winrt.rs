@@ -150,6 +150,7 @@ impl Backend for WinRt {
             stop: true,
             rate: true,
             pitch: true,
+            ssml: false,
             volume: true,
             is_speaking: true,
             voice: true,

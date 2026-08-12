@@ -165,6 +165,7 @@ pub struct Features {
     pub is_speaking: bool,
     pub pitch: bool,
     pub rate: bool,
+    pub ssml: bool,
     pub stop: bool,
     pub utterance_callbacks: bool,
     pub voice: bool,
@@ -217,6 +218,11 @@ pub enum Error {
 pub trait Backend: Clone {
     fn id(&self) -> Option<BackendId>;
     fn supported_features(&self) -> Features;
+    fn speak_ssml(&mut self, ssml: &str) -> Result<(), Error> {
+        let _ = ssml;
+        Err(Error::UnsupportedFeature)
+    }
+
     fn speak(&mut self, text: &str, interrupt: bool) -> Result<Option<UtteranceId>, Error>;
     fn stop(&mut self) -> Result<(), Error>;
     fn min_rate(&self) -> f32;
@@ -373,6 +379,16 @@ impl Tts {
             .write()
             .unwrap()
             .speak(text.into().as_str(), interrupt)
+    }
+
+    /// Speaks SSML markup through the TTS engine.
+    pub fn speak_ssml<S: Into<String>>(&mut self, ssml: S) -> Result<(), Error> {
+        let Features { ssml: supported, .. } = self.supported_features();
+        if supported {
+            self.0.write().unwrap().speak_ssml(&ssml.into())
+        } else {
+            Err(Error::UnsupportedFeature)
+        }
     }
 
     /// Stops current speech.

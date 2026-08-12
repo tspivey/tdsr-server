@@ -24,12 +24,14 @@ public:
   bool Silence();
   bool IsActive();
   bool Output(const wchar_t *str, bool interrupt);
+  bool SpeakSsml(const wchar_t *ssml);
 
 private:
   typedef error_status_t (__stdcall *NVDAController_speakText)(const wchar_t *);
   typedef error_status_t (__stdcall *NVDAController_brailleMessage)(const wchar_t *);
   typedef error_status_t (__stdcall *NVDAController_cancelSpeech)();
   typedef error_status_t (__stdcall *NVDAController_testIfRunning)();
+  typedef error_status_t (__stdcall *NVDAController_speakSsml)(const wchar_t *, int, int, int);
 
 private:
   HINSTANCE controller;
@@ -37,6 +39,7 @@ private:
   NVDAController_brailleMessage nvdaController_brailleMessage;
   NVDAController_cancelSpeech nvdaController_cancelSpeech;
   NVDAController_testIfRunning nvdaController_testIfRunning;
+  NVDAController_speakSsml nvdaController_speakSsml;
 };
 
 #endif // _SCREEN_READER_DRIVER_NVDA_H_
