@@ -1,0 +1,15 @@
+[package]
+authors = ["Dhruv kumar <darbaga10@gmail.com>"]
+name = "tolk-sys"
+description = "Raw ffi bindings to Tolk.dll"
+repository = "https://github.com/darbaga/tolk-sys"
+readme = "README.md"
+categories = ["external-ffi-bindings"]
+license = "MIT"
+version = "0.2.2"
+
+[dependencies]
+libc = "0.2.20"
+
+[build-dependencies]
+cc = "1"
