@@ -1982,8 +1982,6 @@ dependencies = [
 [[package]]
 name = "tolk"
 version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b359314c4735e67890cee739535ad0ee5bc3345940fc19e936b30426c54e00c6"
 dependencies = [
  "lazy_static",
  "tolk-sys",
